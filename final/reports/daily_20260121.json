@@ -1,0 +1,95 @@
+{
+  "date": "2026-01-21",
+  "generated_at": "2026-01-21T01:06:37.612806",
+  "trading_activity": {
+    "total_trades": 1,
+    "active_hours": 1,
+    "avg_trades_per_hour": 1.0,
+    "assets_traded": [
+      "EUR/USD"
+    ],
+    "most_traded_asset": "EUR/USD",
+    "timeframes_used": [
+      "5m"
+    ]
+  },
+  "performance": {
+    "wins": 1,
+    "losses": 0,
+    "win_rate": 100.0,
+    "total_pnl": 1.66,
+    "avg_pnl": 1.66,
+    "best_trade": 1.66,
+    "worst_trade": 1.66,
+    "profit_factor": Infinity,
+    "expectancy": 1.66
+  },
+  "psychology": {
+    "discipline_score": {
+      "score": 50.0,
+      "grade": "F",
+      "factors": {
+        "rule_adherence": 50.0,
+        "journal_compliance": 100.0,
+        "score_discipline": 0.0
+      }
+    },
+    "overtrading_detected": false,
+    "revenge_trading_detected": false,
+    "emotional_state": {
+      "state": "CALM",
+      "risk_score": 0,
+      "factors": [],
+      "recommendation": "\u2705 Good emotional state. Continue following your trading plan."
+    },
+    "warnings_count": 1
+  },
+  "best_worst_trades": {
+    "best": {
+      "asset": "EUR/USD",
+      "direction": "CALL",
+      "pnl": 1.66,
+      "score": 52.9,
+      "entry_time": "2026-01-21 01:06:37.566382"
+    },
+    "worst": {
+      "asset": "EUR/USD",
+      "direction": "CALL",
+      "pnl": 1.66,
+      "score": 52.9,
+      "entry_time": "2026-01-21 01:06:37.566382"
+    }
+  },
+  "score_analysis": {
+    "avg_score": 52.9,
+    "median_score": 52.9,
+    "score_distribution": {
+      "high_quality": 0,
+      "acceptable": 0,
+      "risky": 1,
+      "no_trade": 0
+    },
+    "trades_below_threshold": 1
+  },
+  "session_breakdown": {
+    "ASIAN": {
+      "trades": 1,
+      "wins": 1,
+      "win_rate": 100.0,
+      "total_pnl": 1.66
+    }
+  },
+  "mistakes": [
+    {
+      "type": "IGNORED_AI_WARNING",
+      "count": 1,
+      "description": "Took trade despite AVOID recommendation",
+      "suggestion": "Review and follow trading rules"
+    }
+  ],
+  "improvements": [
+    "Average setup score is 52.9. Aim for scores above 60.",
+    "Your best performance is at hours ['01']. Consider focusing on these times.",
+    "Work on trading discipline. Follow your rules consistently."
+  ]
+}
