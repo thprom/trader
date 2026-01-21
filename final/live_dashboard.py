@@ -132,10 +132,13 @@ def render_signal_card(signal: dict):
         icon = '⛔'
         action_text = 'DO NOT TRADE'
     
+    price = signal.get('price', 'N/A')
+    asset = signal.get('asset', 'Unknown')
+    
     st.markdown(f"""
     <div class="signal-box {signal_class}">
         <h1>{icon} {action_text}</h1>
-        <h3>{signal['asset']} @ {signal['price']}</h3>
+        <h3>{asset} @ {price}</h3>
     </div>
     """, unsafe_allow_html=True)
 
@@ -145,16 +148,17 @@ def render_metrics(signal: dict):
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        score = signal['score']
+        score = signal.get('score', 0)
         score_color = 'success' if score >= 70 else 'warning' if score >= 50 else 'danger'
         st.metric("Score", f"{score:.0f}/100", delta=f"{'Good' if score >= 60 else 'Low'}")
     
     with col2:
-        prob = signal['probability']
+        prob = signal.get('probability', 0)
         st.metric("Probability", f"{prob:.0f}%", delta=f"{'High' if prob >= 60 else 'Medium' if prob >= 50 else 'Low'}")
     
     with col3:
-        st.metric("Confidence", signal['confidence'])
+        confidence = signal.get('confidence', 'N/A')
+        st.metric("Confidence", confidence)
     
     with col4:
         st.metric("Risk Level", signal.get('risk_level', 'N/A'))
