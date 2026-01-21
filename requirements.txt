@@ -7,6 +7,9 @@ scikit-learn>=1.1.0
 # Technical Analysis
 ta>=0.10.0
 
+# Data Fetching
+yfinance>=0.2.0
+
 # Database
 # SQLite is built into Python
 

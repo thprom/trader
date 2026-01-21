@@ -14,11 +14,11 @@ import time
 import json
 
 try:
-    from data_api import ApiClient
+    import yfinance as yf
     API_AVAILABLE = True
 except ImportError:
     API_AVAILABLE = False
-    print("Warning: data_api not available. Using offline mode.")
+    print("Warning: yfinance not available. Using offline mode.")
 
 import config
 from database import get_database
@@ -81,7 +81,7 @@ class LiveDataFetcher:
     }
     
     def __init__(self):
-        self.client = ApiClient() if API_AVAILABLE else None
+        self.client = None  # No longer using data_api
         self.db = get_database()
         self.cache = {}
         self.cache_expiry = {}
@@ -115,7 +115,7 @@ class LiveDataFetcher:
             if datetime.now().timestamp() < self.cache_expiry.get(cache_key, 0):
                 return self.cache[cache_key].copy()
         
-        if not API_AVAILABLE or self.client is None:
+        if not API_AVAILABLE:
             print(f"API not available. Returning empty data for {asset}")
             return pd.DataFrame()
         
@@ -124,84 +124,80 @@ class LiveDataFetcher:
         range_val = self.RANGE_MAP.get(timeframe, '5d')
         
         try:
-            response = self.client.call_api('YahooFinance/get_stock_chart', query={
-                'symbol': symbol,
-                'interval': interval,
-                'range': range_val,
-                'includeAdjustedClose': True
-            })
+            # Download using yfinance
+            ticker = yf.Ticker(symbol)
+            df = ticker.history(interval=interval, period=range_val)
             
-            if response and 'chart' in response and 'result' in response['chart']:
-                result = response['chart']['result'][0]
-                timestamps = result['timestamp']
-                quotes = result['indicators']['quote'][0]
-                
-                df = pd.DataFrame({
-                    'timestamp': pd.to_datetime(timestamps, unit='s'),
-                    'open': quotes['open'],
-                    'high': quotes['high'],
-                    'low': quotes['low'],
-                    'close': quotes['close'],
-                    'volume': quotes.get('volume', [0] * len(timestamps))
-                })
-                
-                # Remove rows with NaN values
-                df = df.dropna()
-                
-                # Add session information
-                df['session'] = df['timestamp'].dt.hour.apply(self._get_session)
-                
-                # Cache the data
-                self.cache[cache_key] = df
-                self.cache_expiry[cache_key] = datetime.now().timestamp() + self.cache_duration
-                
-                # Also store in database for historical analysis
-                self._store_to_database(df, asset, timeframe)
-                
-                return df
-            else:
+            if df.empty:
                 print(f"No data returned for {asset}")
                 return pd.DataFrame()
-                
+            
+            # Reset index to get timestamp as column
+            df = df.reset_index()
+            df = df.rename(columns={
+                'Date': 'timestamp',
+                'Open': 'open',
+                'High': 'high',
+                'Low': 'low',
+                'Close': 'close',
+                'Volume': 'volume'
+            })
+            
+            # Keep only necessary columns
+            df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
+            
+            # Remove rows with NaN values
+            df = df.dropna()
+            
+            # Add session information
+            df['session'] = df['timestamp'].dt.hour.apply(self._get_session)
+            
+            # Cache the data
+            self.cache[cache_key] = df
+            self.cache_expiry[cache_key] = datetime.now().timestamp() + self.cache_duration
+            
+            # Also store in database for historical analysis
+            self._store_to_database(df, asset, timeframe)
+            
+            return df
         except Exception as e:
             print(f"Error fetching data for {asset}: {e}")
             return pd.DataFrame()
     
     def fetch_current_price(self, asset: str) -> Dict[str, Any]:
         """Fetch current price and basic info for an asset."""
-        if not API_AVAILABLE or self.client is None:
+        if not API_AVAILABLE:
             return {'error': True, 'message': 'API not available'}
         
         symbol = self.get_symbol(asset)
         
         try:
-            response = self.client.call_api('YahooFinance/get_stock_chart', query={
-                'symbol': symbol,
-                'interval': '1m',
-                'range': '1d',
-                'includeAdjustedClose': True
-            })
+            ticker = yf.Ticker(symbol)
+            data = ticker.history(period='1d')
             
-            if response and 'chart' in response and 'result' in response['chart']:
-                result = response['chart']['result'][0]
-                meta = result['meta']
-                
-                return {
-                    'error': False,
-                    'asset': asset,
-                    'symbol': symbol,
-                    'price': meta.get('regularMarketPrice', 0),
-                    'previous_close': meta.get('previousClose', 0),
-                    'day_high': meta.get('regularMarketDayHigh', 0),
-                    'day_low': meta.get('regularMarketDayLow', 0),
-                    'change': meta.get('regularMarketPrice', 0) - meta.get('previousClose', 0),
-                    'change_percent': ((meta.get('regularMarketPrice', 0) - meta.get('previousClose', 0)) / 
-                                      meta.get('previousClose', 1)) * 100,
-                    'timestamp': datetime.now().isoformat()
-                }
-            else:
+            if data.empty:
                 return {'error': True, 'message': f'No data for {asset}'}
-                
+            
+            current_price = data['Close'].iloc[-1]
+            previous_close = data['Close'].iloc[0] if len(data) > 1 else current_price
+            day_high = data['High'].max()
+            day_low = data['Low'].min()
+            
+            change = current_price - previous_close
+            change_percent = (change / previous_close * 100) if previous_close != 0 else 0
+            
+            return {
+                'error': False,
+                'asset': asset,
+                'symbol': symbol,
+                'price': float(current_price),
+                'previous_close': float(previous_close),
+                'day_high': float(day_high),
+                'day_low': float(day_low),
+                'change': float(change),
+                'change_percent': float(change_percent),
+                'timestamp': datetime.now().isoformat()
+            }
         except Exception as e:
             return {'error': True, 'message': str(e)}
     
